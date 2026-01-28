@@ -23,6 +23,8 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.1.5",
     "morgan": "^1.10.1",
+    "node-fetch": "^3.3.2",
+    "ua-parser-js": "^2.0.8",
     "zod": "^4.3.6",
     "zx": "^8.8.5"
   },

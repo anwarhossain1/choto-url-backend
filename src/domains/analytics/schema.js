@@ -9,9 +9,8 @@ const clickSchema = new mongoose.Schema({
   ip: String,
   userAgent: String,
   referer: String,
-  country: String,
-  city: String,
-  device: String,
+  device: Object, // stores UAParser result
+  location: Object, // stores city, country, region, etc
   createdAt: {
     type: Date,
     default: Date.now,
