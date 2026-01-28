@@ -20,9 +20,5 @@ export const getLinkByAlias = async (alias) => {
 };
 
 export const updateLinkClicks = async (linkId) => {
-  return await Link.findByIdAndUpdate(
-    linkId,
-    { $inc: { clicks: 1 } },
-    { new: true },
-  );
+  return await Link.updateOne({ _id: linkId }, { $inc: { clicks: 1 } });
 };

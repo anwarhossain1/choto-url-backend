@@ -38,15 +38,17 @@ router.get("/:alias", async (req, res) => {
         success: false,
       });
     }
-    // res.redirect(301, link.longUrl);
-
-    await updateLinkClicks(link._id);
-    trackClick({ linkId: link._id, alias: link.alias, req });
-
-    return res.status(200).json({
-      message: "Link retrieved successfully",
+    updateLinkClicks(link._id).catch((err) => console.error(err));
+    trackClick({ linkId: link._id, alias: link.alias, req }).catch((err) =>
+      console.error(err),
+    );
+    return res.redirect(302, link.longUrl);
+  } catch (error) {
+    res.status(500).json({
+      message: "Server Error",
+      success: false,
     });
-  } catch (error) {}
+  }
 });
 
 export default router;
