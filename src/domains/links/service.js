@@ -14,3 +14,15 @@ export const createShortLink = async (payload) => {
     longUrl,
   });
 };
+
+export const getLinkByAlias = async (alias) => {
+  return await Link.findOne({ alias });
+};
+
+export const updateLinkClicks = async (linkId) => {
+  return await Link.findByIdAndUpdate(
+    linkId,
+    { $inc: { clicks: 1 } },
+    { new: true },
+  );
+};
