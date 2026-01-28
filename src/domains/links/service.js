@@ -1,4 +1,4 @@
-import Link from "../domains/links/schema.js";
+import Link from "./schema.js";
 
 export const createShortLink = async (payload) => {
   const { longUrl, alias, userId, guestId } = payload;
