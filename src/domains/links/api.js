@@ -1,4 +1,5 @@
 import express from "express";
+import { logRequest } from "../../middlewares/log/index.js";
 import { guestLimiter } from "../../middlewares/rateLimiter.js";
 import { trackClick } from "../analytics/service.js";
 import {
@@ -6,10 +7,9 @@ import {
   getLinkByAlias,
   updateLinkClicks,
 } from "./service.js";
-
 const router = express.Router();
 
-router.post("/links", guestLimiter, async (req, res) => {
+router.post("/links", guestLimiter, logRequest({}), async (req, res) => {
   try {
     const link = await createShortLink(req.body);
     if (link) {
@@ -28,7 +28,7 @@ router.post("/links", guestLimiter, async (req, res) => {
   }
 });
 
-router.get("/:alias", async (req, res) => {
+router.get("/:alias", logRequest({}), async (req, res) => {
   const { alias } = req.params;
   try {
     const link = await getLinkByAlias(alias);
