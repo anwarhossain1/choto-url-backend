@@ -1,9 +1,9 @@
 import express from "express";
 import { logRequest } from "../../middlewares/log/index.js";
-import { guestLimiter } from "../../middlewares/rateLimiter.js";
+import { burstLimiter, guestLimiter } from "../../middlewares/rateLimiter.js";
 import { validateRequest } from "../../middlewares/request-validate/index.js";
 import { trackClick } from "../analytics/service.js";
-import { aliasSchema } from "./request.js";
+import { aliasSchema, createLinkSchema } from "./request.js";
 import {
   createShortLink,
   getLinkByAlias,
@@ -11,29 +11,36 @@ import {
 } from "./service.js";
 const router = express.Router();
 
-router.post("/links", guestLimiter, logRequest({}), async (req, res) => {
-  try {
-    const link = await createShortLink(req.body);
-    if (link) {
-      return res.status(201).json({
-        message: "Link created successfully",
-        success: true,
-        status: 201,
-        data: link,
+router.post(
+  "/links",
+  guestLimiter,
+  logRequest({}),
+  validateRequest({ schema: createLinkSchema, isParam: false }),
+  async (req, res) => {
+    try {
+      const link = await createShortLink(req.body);
+      if (link) {
+        return res.status(201).json({
+          message: "Link created successfully",
+          success: true,
+          status: 201,
+          data: link,
+        });
+      }
+    } catch (error) {
+      res.status(400).json({
+        message: error.message,
+        success: false,
       });
     }
-  } catch (error) {
-    res.status(400).json({
-      message: error.message,
-      success: false,
-    });
-  }
-});
+  },
+);
 //
 
 router.get(
   "/:alias",
   logRequest({}),
+  burstLimiter,
   validateRequest({ schema: aliasSchema, isParam: true }),
   async (req, res) => {
     const { alias } = req.params;

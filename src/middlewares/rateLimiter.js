@@ -5,3 +5,8 @@ export const guestLimiter = rateLimit({
   max: 5,
   message: "Guest link limit reached",
 });
+
+export const burstLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+});
