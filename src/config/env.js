@@ -5,4 +5,5 @@ export const env = {
   nodeEnv: process.env.NODE_ENV,
   mongoUri: process.env.MONGO_URI,
   ipGeolocationApiKey: process.env.IP_GEOLOCATION_API_KEY,
+  baseUrl: process.env.BASE_URL,
 };

@@ -26,6 +26,14 @@ const linkSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    shortUrl: {
+      type: String,
+      required: true,
+    },
+    qrCode: {
+      type: String,
+      required: true,
+    },
     clicks: {
       type: Number,
       default: 0,

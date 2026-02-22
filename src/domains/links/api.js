@@ -1,6 +1,6 @@
 import express from "express";
 import { logRequest } from "../../middlewares/log/index.js";
-import { burstLimiter, guestLimiter } from "../../middlewares/rateLimiter.js";
+import { burstLimiter } from "../../middlewares/rateLimiter.js";
 import { validateRequest } from "../../middlewares/request-validate/index.js";
 import { trackClick } from "../analytics/service.js";
 import { aliasSchema, createLinkSchema } from "./request.js";
@@ -13,7 +13,7 @@ const router = express.Router();
 
 router.post(
   "/links",
-  guestLimiter,
+  // guestLimiter,
   logRequest({}),
   validateRequest({ schema: createLinkSchema, isParam: false }),
   async (req, res) => {
