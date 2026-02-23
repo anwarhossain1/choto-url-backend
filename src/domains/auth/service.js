@@ -27,3 +27,5 @@ export const createUser = async (payload) => {
     throw error;
   }
 };
+
+export const loginUser = async (payload) => {};
