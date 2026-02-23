@@ -1,0 +1,102 @@
+import bcrypt from "bcrypt";
+import mongoose from "mongoose";
+const refreshTokenSchema = new mongoose.Schema(
+  {
+    token: {
+      type: String,
+      required: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    deviceInfo: {
+      type: String,
+    },
+  },
+  { _id: true },
+);
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 50,
+    },
+
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+      //   index: true,
+    },
+
+    passwordHash: {
+      type: String,
+      required: true,
+      minlength: 6,
+      select: false,
+    },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailVerificationToken: {
+      type: String,
+    },
+
+    passwordResetToken: {
+      type: String,
+    },
+
+    passwordResetExpires: {
+      type: Date,
+    },
+
+    subscriptionPlan: {
+      type: String,
+      enum: ["free", "pro"],
+      default: "free",
+    },
+
+    refreshTokens: [refreshTokenSchema],
+
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+// 🔐 Hash password before saving
+userSchema.pre("save", async function () {
+  if (!this.isModified("passwordHash")) return;
+  const salt = await bcrypt.genSalt(12);
+  this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
+});
+
+// 🔑 Compare password method
+userSchema.methods.comparePassword = async function (password) {
+  return bcrypt.compare(password, this.passwordHash);
+};
+
+// // 🚀 Unique index for email (extra safety)
+userSchema.index({ email: 1 }, { unique: true });
+
+const User = mongoose.model("User", userSchema);
+export default User;

@@ -15,7 +15,6 @@ const getLocationFromIP = async (ip) => {
       requestOptions,
     );
     const data = await res.json();
-    console.log("da", data, res.body);
     return {
       city: data.city,
       country: data.country_name,
