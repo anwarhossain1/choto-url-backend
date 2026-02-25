@@ -8,4 +8,5 @@ export const env = {
   baseUrl: process.env.BASE_URL,
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
+  clientUrl: process.env.CLIENT_URL,
 };

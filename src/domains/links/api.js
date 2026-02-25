@@ -12,13 +12,13 @@ import {
 const router = express.Router();
 
 router.post(
-  "/r/links",
+  "/links",
   // guestLimiter,
   logRequest({}),
   validateRequest({ schema: createLinkSchema, isParam: false }),
   async (req, res) => {
     try {
-      const link = await createShortLink(req.body);
+      const link = await createShortLink(req, res);
       if (link) {
         return res.status(201).json({
           message: "Link created successfully",

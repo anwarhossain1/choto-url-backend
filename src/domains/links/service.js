@@ -1,6 +1,6 @@
+import { randomUUID } from "crypto";
 import { env } from "../../config/env.js";
 import Link from "./schema.js";
-
 export function generateQRCode(url) {
   // Using QR Server API for QR code generation
   const size = "200x200";
@@ -10,8 +10,21 @@ export function generateQRCode(url) {
   )}`;
 }
 
-export const createShortLink = async (payload) => {
-  const { longUrl, alias, userId, guestId } = payload;
+export const createShortLink = async (req, res) => {
+  const { longUrl, alias, userId } = req.body;
+  let guestId = req?.cookies?.guestId;
+
+  // If not logged in AND no guestId yet
+  if (!req.user && !guestId) {
+    guestId = randomUUID();
+    res.cookie("guestId", guestId, {
+      httpOnly: true, // not sensitive
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
+      secure: env.nodeEnv === "development" ? false : true, // localhost only
+    });
+  }
+
   const shortUrl = `${env.baseUrl}/${alias}`;
   const qrCode = generateQRCode(shortUrl);
   const aliasExists = await Link.findOne({ alias });
@@ -20,8 +33,8 @@ export const createShortLink = async (payload) => {
   }
   return await Link.create({
     ownerType: userId ? "User" : "Guest",
-    userId: userId || null,
-    guestId: guestId || null,
+    user: req.user?.userId || null,
+    guestId: req.user ? null : guestId,
     alias,
     longUrl,
     shortUrl,
