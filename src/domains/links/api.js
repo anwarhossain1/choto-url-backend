@@ -1,4 +1,5 @@
 import express from "express";
+import { optionalVerifyAccessToken } from "../../middlewares/auth/optionalVerifyAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import { burstLimiter } from "../../middlewares/rateLimiter.js";
 import { validateRequest } from "../../middlewares/request-validate/index.js";
@@ -14,6 +15,7 @@ const router = express.Router();
 router.post(
   "/links",
   // guestLimiter,
+  optionalVerifyAccessToken,
   logRequest({}),
   validateRequest({ schema: createLinkSchema, isParam: false }),
   async (req, res) => {
