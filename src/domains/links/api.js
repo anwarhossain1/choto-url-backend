@@ -12,7 +12,7 @@ import {
 const router = express.Router();
 
 router.post(
-  "/links",
+  "/r/links",
   // guestLimiter,
   logRequest({}),
   validateRequest({ schema: createLinkSchema, isParam: false }),
@@ -38,7 +38,7 @@ router.post(
 //
 
 router.get(
-  "/:alias",
+  "/r/:alias",
   logRequest({}),
   burstLimiter,
   validateRequest({ schema: aliasSchema, isParam: true }),
