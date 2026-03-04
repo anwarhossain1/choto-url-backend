@@ -140,12 +140,59 @@ export const changeEmail = async (req, res, next) => {
     }
 
     await User.updateOne({ _id: userId }, { $set: { email: newEmail } });
+    logger.info(`Email updated successfully - user id ${userId}`);
 
     return res.json({
       success: true,
       message: "Email updated successfully",
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Confirm password does not match",
+      });
+    }
+
+    const user = await User.findById(userId).select("+passwordHash");
+
+    const isPasswordValid = await user.comparePassword(currentPassword);
+
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Current password is incorrect",
+      });
+    }
+
+    await User.updateOne(
+      { _id: userId },
+      { $set: { passwordHash: confirmPassword } },
+    );
+    logger.info(`Password updated successfully - user id ${userId}`);
+    return res.json({
+      success: true,
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    logger.error(error);
     next(error);
   }
 };

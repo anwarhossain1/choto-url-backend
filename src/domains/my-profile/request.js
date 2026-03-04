@@ -10,3 +10,8 @@ export const changeEmailSchema = Joi.object({
   currentPassword: Joi.string().min(6).required(),
   confirmPassword: Joi.string().min(6).required(),
 });
+export const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().min(6).required(),
+  newPassword: Joi.string().min(6).required(),
+  confirmPassword: Joi.string().min(6).required(),
+});
