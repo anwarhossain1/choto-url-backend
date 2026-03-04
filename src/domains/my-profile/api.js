@@ -1,6 +1,8 @@
 import express from "express";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
-import { getProfileData } from "./service.js";
+import { validateRequest } from "../../middlewares/request-validate/index.js";
+import { changeNameSchema } from "./request.js";
+import { changeUserName, getProfileData } from "./service.js";
 
 const router = express.Router();
 router.get("/my-profile", verifyAccessToken, async (req, res, next) => {
@@ -17,4 +19,10 @@ router.get("/my-profile", verifyAccessToken, async (req, res, next) => {
     });
   }
 });
+router.patch(
+  "/my-profile/change-name",
+  verifyAccessToken,
+  validateRequest({ schema: changeNameSchema, isParam: false }),
+  changeUserName,
+);
 export default router;

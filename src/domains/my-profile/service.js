@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import logger from "../../libraries/log/logger.js";
 import Click from "../analytics/schema.js";
 import User from "../auth/schema.js";
 import Link from "../links/schema.js";
@@ -61,7 +62,7 @@ export const getProfileData = async (userId) => {
         },
       ]),
     ]);
-
+    logger.info(`get profile data of the user ${userId}`);
     return {
       ...user,
       totalLinks: linkStats[0]?.totalLinks || 0,
@@ -70,6 +71,32 @@ export const getProfileData = async (userId) => {
       totalClicks: clickStats[0]?.totalClicks || 0,
     };
   } catch (error) {
+    logger.error(`${error.message} - User ID ${userId}`);
     throw new Error(error.message);
+  }
+};
+
+export const changeUserName = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({
+        success: false,
+        message: "Name is required",
+      });
+    }
+
+    await User.updateOne({ _id: userId }, { $set: { name } });
+    logger.info("User name updated successfully");
+
+    return res.json({
+      success: true,
+      message: "Name updated successfully",
+    });
+  } catch (error) {
+    logger.error(error);
+    next(error);
   }
 };
