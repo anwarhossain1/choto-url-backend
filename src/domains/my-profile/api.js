@@ -1,8 +1,8 @@
 import express from "express";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { validateRequest } from "../../middlewares/request-validate/index.js";
-import { changeNameSchema } from "./request.js";
-import { changeUserName, getProfileData } from "./service.js";
+import { changeEmailSchema, changeNameSchema } from "./request.js";
+import { changeEmail, changeUserName, getProfileData } from "./service.js";
 
 const router = express.Router();
 router.get("/my-profile", verifyAccessToken, async (req, res, next) => {
@@ -24,5 +24,11 @@ router.patch(
   verifyAccessToken,
   validateRequest({ schema: changeNameSchema, isParam: false }),
   changeUserName,
+);
+router.patch(
+  "/my-profile/change-email",
+  verifyAccessToken,
+  validateRequest({ schema: changeEmailSchema, isParam: false }),
+  changeEmail,
 );
 export default router;
