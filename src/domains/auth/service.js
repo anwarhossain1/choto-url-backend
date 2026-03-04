@@ -38,3 +38,41 @@ export const loginUser = async (payload) => {
   const userExists = await findUser(normalizedEmail);
   return userExists;
 };
+
+export const logout = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const refreshToken = req.cookies.refreshToken;
+
+    if (refreshToken) {
+      await User.updateOne(
+        { _id: userId },
+        {
+          $pull: {
+            refreshTokens: refreshToken,
+          },
+        },
+      );
+    }
+
+    // Clear auth cookies
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "strict",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful",
+    });
+  } catch (error) {
+    next(error);
+  }
+};

@@ -172,6 +172,7 @@ export const changePassword = async (req, res, next) => {
     }
 
     const user = await User.findById(userId).select("+passwordHash");
+    console.log("user", user, currentPassword);
 
     const isPasswordValid = await user.comparePassword(currentPassword);
 
@@ -181,11 +182,8 @@ export const changePassword = async (req, res, next) => {
         message: "Current password is incorrect",
       });
     }
-
-    await User.updateOne(
-      { _id: userId },
-      { $set: { passwordHash: confirmPassword } },
-    );
+    user.passwordHash = confirmPassword;
+    await user.save();
     logger.info(`Password updated successfully - user id ${userId}`);
     return res.json({
       success: true,

@@ -40,10 +40,11 @@ router.patch(
   validateRequest({ schema: changeEmailSchema, isParam: false }),
   changeEmail,
 );
-router.patch(
+router.post(
   "/my-profile/change-password",
   verifyAccessToken,
   validateRequest({ schema: changePasswordSchema, isParam: false }),
   changePassword,
 );
+
 export default router;
