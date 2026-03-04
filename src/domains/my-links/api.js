@@ -3,12 +3,20 @@ import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { getMyLinks } from "./service.js";
 
 const router = express.Router();
-router.get("/my-links", verifyAccessToken, async (req, res) => {
+router.get("/my-links", verifyAccessToken, async (req, res, next) => {
+  const { page, limit } = req.query;
+  if (!page || !limit) {
+    return res.status(400).json({
+      success: false,
+      message: "Page and limit are required",
+    });
+  }
   try {
-    const myLinks = await getMyLinks(req);
-    if (myLinks) {
+    const myLinksResponse = await getMyLinks(req);
+    if (myLinksResponse) {
       return res.status(201).json({
-        data: myLinks,
+        success: true,
+        ...myLinksResponse,
       });
     }
   } catch (error) {
