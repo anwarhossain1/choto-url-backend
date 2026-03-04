@@ -28,11 +28,13 @@ export const createUser = async (payload) => {
   }
 };
 
+export const findUser = async (email) => {
+  return await User.findOne({ email }).select("+passwordHash");
+};
+
 export const loginUser = async (payload) => {
   const { email } = payload;
   const normalizedEmail = email.toLowerCase().trim();
-  const userExists = await User.findOne({ email: normalizedEmail }).select(
-    "+passwordHash",
-  );
+  const userExists = await findUser(normalizedEmail);
   return userExists;
 };

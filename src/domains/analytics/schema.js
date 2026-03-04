@@ -4,6 +4,7 @@ const clickSchema = new mongoose.Schema({
   linkId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Link",
+    index: true,
   },
   alias: String,
   ip: String,
