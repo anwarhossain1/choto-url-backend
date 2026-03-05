@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import { UAParser } from "ua-parser-js";
 import { env } from "../../config/env.js";
+import Link from "../links/schema.js";
 import Click from "./schema.js";
 const myHeaders = new Headers();
 const getLocationFromIP = async (ip) => {
@@ -46,4 +47,66 @@ export const trackClick = async ({ linkId, alias, req }) => {
     device,
     location,
   });
+};
+
+export const getAnalyticsOverview = async (userId, days) => {
+  try {
+    const allowedDays = [7, 30, 90, 365];
+
+    if (!allowedDays.includes(Number(days))) {
+      throw new Error("Invalid days parameter");
+    }
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    // Get all user links
+    const userLinks = await Link.find({ userId }).select("_id");
+
+    const linkIds = userLinks.map((link) => link._id);
+
+    const totalLinks = linkIds.length;
+
+    if (totalLinks === 0) {
+      return {
+        overview: {
+          totalLinks: 0,
+          totalClicks: 0,
+          uniqueClicks: 0,
+          clickRate: 0,
+          clickRate: "0%",
+        },
+      };
+    }
+
+    const clicks = await Click.aggregate([
+      {
+        $match: {
+          linkId: { $in: linkIds },
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalClicks: { $sum: 1 },
+          uniqueIPs: { $addToSet: "$ip" },
+        },
+      },
+    ]);
+
+    const totalClicks = clicks[0]?.totalClicks || 0;
+    const uniqueClicks = clicks[0]?.uniqueIPs?.length || 0;
+    const clickRateValue = (totalClicks / totalLinks) * 100;
+    return {
+      overview: {
+        totalLinks,
+        totalClicks,
+        uniqueClicks,
+        clickRate: `${clickRateValue.toFixed(2)}%`,
+      },
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
 };
