@@ -110,3 +110,14 @@ export const getAnalyticsOverview = async (userId, days) => {
     throw new Error(error.message);
   }
 };
+
+export const getBestPerformingLinks = async (userId, subscriptionLimit) => {
+  try {
+    const bestLinks = await Link.find({ userId })
+      .sort({ clickCount: -1 })
+      .limit(subscriptionLimit);
+    return bestLinks;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
