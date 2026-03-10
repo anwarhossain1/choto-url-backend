@@ -30,6 +30,13 @@ export const trackClick = async ({ linkId, alias, req }) => {
   const ip =
     req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
 
+  console.log(
+    "Detected IP:",
+    ip,
+    "| x-forwarded-for:",
+    req.headers["x-forwarded-for"],
+  );
+
   const userAgent = req.headers["user-agent"];
   const referer = req.headers.referer || null;
   // Device info
@@ -37,6 +44,7 @@ export const trackClick = async ({ linkId, alias, req }) => {
   const device = parser.getResult();
   // Location info
   const location = await getLocationFromIP(ip);
+  // console.log("loca", location, ip);
 
   await Click.create({
     linkId,
