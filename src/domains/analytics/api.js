@@ -28,7 +28,7 @@ router.get(
 export default router;
 
 router.get(
-  "/my-analytics/best-links",
+  "/my-analytics/top-links",
   logRequest({}),
   verifyAccessToken,
   async (req, res, next) => {
