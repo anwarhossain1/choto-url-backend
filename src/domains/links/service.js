@@ -26,7 +26,7 @@ export const createShortLink = async (req, res) => {
     });
   }
 
-  const shortUrl = `${env.baseUrl}/${alias}`;
+  const shortUrl = `${env.baseUrl}/r/${alias}`;
   const qrCode = generateQRCode(shortUrl);
   const aliasExists = await Link.findOne({ alias });
   if (aliasExists) {
