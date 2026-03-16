@@ -1,5 +1,7 @@
+import crypto from "crypto";
+import { env } from "../../config/env.js";
+import sendEmail from "../../utils/sendEmail.js";
 import User from "./schema.js";
-
 // import User from "./schema.js";
 export const createUser = async (payload) => {
   const { name, password, email } = payload;
@@ -75,4 +77,43 @@ export const logout = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  // Do not reveal if email exists
+  if (!user) {
+    return res.json({
+      message: "If this email exists, you will receive a password reset link.",
+    });
+  }
+
+  // generate token
+  const resetToken = crypto.randomBytes(32).toString("hex");
+
+  // hash token
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  user.resetPasswordToken = hashedToken;
+  user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; //15 mins expiration
+
+  await user.save();
+
+  const resetURL = `${env.frontendUrl}/auth/reset-password?token=${resetToken}`;
+
+  await sendEmail({
+    to: user.email,
+    subject: "Password Reset",
+    html: `
+      <p>Click the link below to reset your password:</p>
+      <a href="${resetURL}">${resetURL}</a>
+      <p>This link expires in 15 minutes.</p>
+    `,
+  });
+  res.json({ message: "Reset email sent", resetURL });
 };

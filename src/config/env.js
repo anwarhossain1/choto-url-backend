@@ -9,4 +9,7 @@ export const env = {
   accessTokenSecret: process.env.ACCESS_TOKEN_SECRET,
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
   clientUrl: process.env.CLIENT_URL,
+  frontendUrl: process.env.FRONTEND_URL,
+  emailUser: process.env.EMAIL_USER,
+  emailPass: process.env.EMAIL_PASS,
 };

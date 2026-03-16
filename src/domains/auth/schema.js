@@ -70,6 +70,8 @@ const userSchema = new mongoose.Schema(
       enum: ["free", "pro"],
       default: "free",
     },
+    resetPasswordToken: String,
+    resetPasswordExpire: Date,
 
     refreshTokens: [refreshTokenSchema],
 
