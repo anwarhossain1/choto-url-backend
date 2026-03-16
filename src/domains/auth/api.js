@@ -5,7 +5,13 @@ import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import { validateRequest } from "../../middlewares/request-validate/index.js";
 import { loginSchema, registerSchema } from "./request.js";
-import { createUser, forgotPassword, loginUser, logout } from "./service.js";
+import {
+  createUser,
+  forgotPassword,
+  loginUser,
+  logout,
+  resetPassword,
+} from "./service.js";
 const router = express.Router();
 router.post(
   "/auth/register",
@@ -92,5 +98,6 @@ router.post(
 );
 router.post("/auth/logout", verifyAccessToken, logout);
 router.post("/auth/forgot-password", forgotPassword);
+router.post("/auth/reset-password", resetPassword);
 
 export default router;
