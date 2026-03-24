@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { env } from "../../config/env.js";
-import sendEmail from "../../utils/sendEmail.js";
+import sendEmail from "../../emails/emailService.js";
+import { forgotPasswordTemplate } from "../../emails/templates/forgotPassword.js";
 import User from "./schema.js";
 // import User from "./schema.js";
 export const createUser = async (payload) => {
@@ -106,15 +107,14 @@ export const forgotPassword = async (req, res) => {
   await user.save();
 
   const resetURL = `${env.frontendUrl}/auth/reset-password?token=${resetToken}`;
-
+  const html = forgotPasswordTemplate({
+    resetURL,
+    name: user.name,
+  });
   await sendEmail({
     to: user.email,
     subject: "Password Reset",
-    html: `
-      <p>Click the link below to reset your password:</p>
-      <a href="${resetURL}">${resetURL}</a>
-      <p>This link expires in 15 minutes.</p>
-    `,
+    html,
   });
   res.json({ message: "Reset email sent", resetURL });
 };
