@@ -4,7 +4,12 @@ import { env } from "../../config/env.js";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import { validateRequest } from "../../middlewares/request-validate/index.js";
-import { loginSchema, registerSchema } from "./request.js";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+} from "./request.js";
 import {
   createUser,
   forgotPassword,
@@ -97,7 +102,15 @@ router.post(
   },
 );
 router.post("/auth/logout", verifyAccessToken, logout);
-router.post("/auth/forgot-password", forgotPassword);
-router.post("/auth/reset-password", resetPassword);
+router.post(
+  "/auth/forgot-password",
+  validateRequest({ schema: forgotPasswordSchema, isParam: false }),
+  forgotPassword,
+);
+router.post(
+  "/auth/reset-password",
+  validateRequest({ schema: resetPasswordSchema, isParam: false }),
+  resetPassword,
+);
 
 export default router;
