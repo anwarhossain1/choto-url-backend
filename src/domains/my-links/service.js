@@ -41,3 +41,43 @@ export const getMyLinks = async (req, res) => {
     throw new Error(error.message);
   }
 };
+
+/**
+ * Soft delete link
+ */
+export const softDeleteLink = async (userId, linkId) => {
+  const link = await Link.findOne({ _id: linkId, userId, isDeleted: false });
+  if (!link) throw new Error("Link not found or already deleted");
+
+  link.isDeleted = true;
+  link.deletedAt = new Date();
+  await link.save();
+
+  return { message: "Link deleted successfully" };
+};
+
+/**
+ * Hard delete link
+ */
+export const hardDeleteLink = async (userId, linkId) => {
+  const link = await ShortLink.findOne({ _id: linkId, userId });
+  if (!link) throw new Error("Link not found");
+
+  await ShortLink.deleteOne({ _id: linkId, userId });
+
+  return { message: "Link permanently deleted" };
+};
+
+/**
+ * Restore soft deleted link
+ */
+export const restoreLink = async (userId, linkId) => {
+  const link = await Link.findOne({ _id: linkId, userId, isDeleted: true });
+  if (!link) throw new Error("Link not found or not deleted");
+
+  link.isDeleted = false;
+  link.deletedAt = null;
+  await link.save();
+
+  return { message: "Link restored successfully" };
+};
