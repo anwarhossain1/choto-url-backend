@@ -1,8 +1,8 @@
-import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { env } from "../../config/env.js";
 import sendEmail from "../../emails/emailService.js";
 import { forgotPasswordTemplate } from "../../emails/templates/forgotPassword.js";
+import { resetPasswordSuccessTemplate } from "../../emails/templates/resetPassword.js";
 import User from "./schema.js";
 // import User from "./schema.js";
 export const createUser = async (payload) => {
@@ -101,12 +101,13 @@ export const forgotPassword = async (req, res) => {
     .update(resetToken)
     .digest("hex");
 
-  user.resetPasswordToken = hashedToken;
-  user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; //15 mins expiration
+  user.passwordResetToken = hashedToken;
+  user.passwordResetExpires = new Date(Date.now() + 15 * 60 * 1000); //15 mins expiration
 
   await user.save();
 
   const resetURL = `${env.frontendUrl}/auth/reset-password?token=${resetToken}`;
+  console.log("Reset URL:", resetURL, user);
   const html = forgotPasswordTemplate({
     resetURL,
     name: user.name,
@@ -125,24 +126,28 @@ export const resetPassword = async (req, res) => {
   if (password !== confirmPassword) {
     return res.status(400).json({ message: "Passwords do not match" });
   }
-
   const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
   const user = await User.findOne({
-    resetPasswordToken: hashedToken,
-    resetPasswordExpire: { $gt: Date.now() },
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
   });
 
   if (!user) {
     return res.status(400).json({ message: "Invalid or expired token" });
   }
-
-  user.password = await bcrypt.hash(password, 10);
-
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpire = undefined;
-
+  user.passwordHash = password;
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
   await user.save();
+  const html = resetPasswordSuccessTemplate({
+    loginURL: env.frontendUrl + "/auth/sign-in",
+    name: user.name,
+  });
+  await sendEmail({
+    to: user.email,
+    subject: "Your Password Was Successfully Reset",
+    html,
+  });
 
   res.json({ message: "Password reset successful" });
 };
