@@ -70,6 +70,53 @@ const userSchema = new mongoose.Schema(
       enum: ["free", "pro"],
       default: "free",
     },
+    subscription: {
+      plan: {
+        type: String,
+        enum: ["free", "starter", "professional", "enterprise"],
+        default: "free",
+      },
+
+      status: {
+        type: String,
+        enum: ["active", "trialing", "past_due", "canceled"],
+        default: "active",
+      },
+
+      currentPeriodStart: {
+        type: Date,
+        default: Date.now(),
+      },
+
+      currentPeriodEnd: {
+        type: Date,
+      },
+
+      cancelAtPeriodEnd: {
+        type: Boolean,
+        default: false,
+      },
+
+      // Payment Provider (Stripe etc.)
+      provider: {
+        type: String,
+        enum: ["stripe", "manual", null],
+        default: null,
+      },
+      approvedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+
+      approvedAt: {
+        type: Date,
+        default: null,
+      },
+
+      providerCustomerId: String,
+      providerSubscriptionId: String,
+    },
     refreshTokens: [refreshTokenSchema],
 
     tokenVersion: {

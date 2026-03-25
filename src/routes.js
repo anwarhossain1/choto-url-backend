@@ -6,6 +6,7 @@ import authRoutes from "./domains/auth/api.js";
 import linkRoutes from "./domains/links/api.js";
 import myLinksRoutes from "./domains/my-links/api.js";
 import myProfileRoutes from "./domains/my-profile/api.js";
+import paymentRequestRoute from "./domains/payment-request/api.js";
 const router = express.Router();
 
 router.get("/", (req, res) => {
@@ -14,6 +15,7 @@ router.get("/", (req, res) => {
 
 router.use(linkRoutes);
 router.use(authRoutes);
+router.use(paymentRequestRoute);
 router.use(myLinksRoutes);
 router.use(myProfileRoutes);
 router.use(myAnalyticsRoutes);
