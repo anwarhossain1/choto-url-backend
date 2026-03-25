@@ -13,7 +13,6 @@ export function generateQRCode(url) {
 export const createShortLink = async (req, res) => {
   const { longUrl, alias } = req.body;
   let guestId = req?.cookies?.guestId;
-  console.log("res", req.user);
 
   // If not logged in AND no guestId yet
   if (!req.user && !guestId) {
@@ -29,8 +28,11 @@ export const createShortLink = async (req, res) => {
   const shortUrl = `${env.baseUrl}/r/${alias}`;
   const qrCode = generateQRCode(shortUrl);
   const aliasExists = await Link.findOne({ alias });
+
   if (aliasExists) {
-    throw new Error("Alias already in use");
+    throw new Error(
+      "This alias has already been used and is no longer available.",
+    );
   }
   return await Link.create({
     ownerType: req.user?.userId ? "User" : "Guest",

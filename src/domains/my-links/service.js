@@ -22,12 +22,11 @@ export const getMyLinks = async (req, res) => {
     }
     const skip = (pageNumber - 1) * limitNumber;
     const [links, total] = await Promise.all([
-      Link.find({ userId })
+      Link.find({ userId, isDeleted: false })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNumber),
-
-      Link.countDocuments({ userId }),
+      Link.countDocuments({ userId, isDeleted: false }),
     ]);
     const pagination = getPagination({ page, limit, total });
     logger.info("Links fetched successfully");

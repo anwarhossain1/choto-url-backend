@@ -1,4 +1,5 @@
 import express from "express";
+import { env } from "../../config/env.js";
 import { optionalVerifyAccessToken } from "../../middlewares/auth/optionalVerifyAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import { burstLimiter } from "../../middlewares/rateLimiter.js";
@@ -48,7 +49,8 @@ router.get(
     const { alias } = req.params;
     try {
       const link = await getLinkByAlias(alias);
-      if (!link || !link.isActive) {
+      if (!link || !link.isActive || link.isDeleted) {
+        return res.redirect(302, `${env.frontendUrl}/404`);
         return res.status(404).json({
           message: "Link not found",
           success: false,

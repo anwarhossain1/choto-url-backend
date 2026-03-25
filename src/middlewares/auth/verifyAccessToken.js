@@ -10,7 +10,7 @@ export const verifyAccessToken = (req, res, next) => {
     });
   }
   const token = authHeader.split(" ")[1];
-  console.log("da", authHeader, token);
+
   try {
     const decoded = jwt.verify(token, env.accessTokenSecret);
     req.user = decoded;

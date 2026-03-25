@@ -9,34 +9,29 @@ import {
 } from "./service.js";
 
 const router = express.Router();
-router.get(
-  "/my-links",
-  logRequest({}),
-  verifyAccessToken,
-  async (req, res, next) => {
-    const { page, limit } = req.query;
-    if (!page || !limit) {
-      return res.status(400).json({
-        success: false,
-        message: "Page and limit are required",
+router.get("/my-links", logRequest({}), verifyAccessToken, async (req, res) => {
+  const { page, limit } = req.query;
+  if (!page || !limit) {
+    return res.status(400).json({
+      success: false,
+      message: "Page and limit are required",
+    });
+  }
+  try {
+    const myLinksResponse = await getMyLinks(req);
+    if (myLinksResponse) {
+      return res.status(201).json({
+        success: true,
+        ...myLinksResponse,
       });
     }
-    try {
-      const myLinksResponse = await getMyLinks(req);
-      if (myLinksResponse) {
-        return res.status(201).json({
-          success: true,
-          ...myLinksResponse,
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        message: error.message,
-        success: false,
-      });
-    }
-  },
-);
+  } catch (error) {
+    res.status(500).json({
+      message: error.message,
+      success: false,
+    });
+  }
+});
 router.delete(
   "/my-links/:id",
   logRequest({}),
@@ -47,17 +42,15 @@ router.delete(
     try {
       let result;
       if (hard === "true") {
-        result = await hardDeleteLink(req.user._id, id);
+        result = await hardDeleteLink(req.user.userId, id);
       } else {
-        result = await softDeleteLink(req.user._id, id);
+        result = await softDeleteLink(req.user.userId, id);
       }
-
       return res.status(200).json({
         success: true,
         message: result.message,
       });
     } catch (error) {
-      console.error(error);
       return res.status(500).json({
         success: false,
         message: error.message || "Something went wrong",
