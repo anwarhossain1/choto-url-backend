@@ -2,6 +2,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env.js";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
+import { verifyAdminAccessToken } from "../../middlewares/auth/verifyAdminAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import { validateRequest } from "../../middlewares/request-validate/index.js";
 import {
@@ -102,6 +103,7 @@ router.post(
   },
 );
 router.post("/auth/logout", verifyAccessToken, logout);
+router.post("/auth/admin/logout", verifyAdminAccessToken, logout);
 router.post(
   "/auth/forgot-password",
   validateRequest({ schema: forgotPasswordSchema, isParam: false }),
