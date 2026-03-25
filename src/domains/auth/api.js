@@ -58,12 +58,12 @@ router.post(
         delete user.passwordHash;
         // 4. Generate tokens
         const accessToken = jwt.sign(
-          { userId: user._id },
+          { userId: user._id, role: user.role },
           env.accessTokenSecret,
           { expiresIn: "1d" },
         );
         const refreshToken = jwt.sign(
-          { userId: user._id },
+          { userId: user._id, role: user.role },
           env.refreshTokenSecret,
           { expiresIn: "7d" },
         );

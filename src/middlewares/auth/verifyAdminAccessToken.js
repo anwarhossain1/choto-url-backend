@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env.js";
-export const verifyAccessToken = (req, res, next) => {
+export const verifyAdminAccessToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -13,10 +13,10 @@ export const verifyAccessToken = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, env.accessTokenSecret);
-    if (decoded.role !== "user") {
+    if (decoded.role !== "admin") {
       return res.status(401).json({
         success: false,
-        message: "Unauthorized: Access denied", // this is for user role only, admin will have separate middleware
+        message: "Unauthorized: Access denied", // this is for admin role only
       });
     }
     req.user = decoded;

@@ -1,4 +1,5 @@
 import express from "express";
+import adminRoutes from "./domains/admin/dashboard/api.js";
 import myAnalyticsRoutes from "./domains/analytics/api.js";
 import authRoutes from "./domains/auth/api.js";
 import linkRoutes from "./domains/links/api.js";
@@ -15,5 +16,6 @@ router.use(authRoutes);
 router.use(myLinksRoutes);
 router.use(myProfileRoutes);
 router.use(myAnalyticsRoutes);
+router.use("/admin", adminRoutes);
 
 export default router;
