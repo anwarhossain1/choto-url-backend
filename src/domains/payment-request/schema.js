@@ -11,7 +11,7 @@ const paymentRequestSchema = new mongoose.Schema(
 
     plan: {
       type: String,
-      enum: ["pro", "business"],
+      enum: ["professional", "enterprise", "starter"],
       required: true,
     },
 
