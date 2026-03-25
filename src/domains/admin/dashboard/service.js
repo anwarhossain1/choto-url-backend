@@ -6,7 +6,7 @@ export const getAdminDashboardStats = async () => {
     await Promise.all([
       User.countDocuments(),
       Link.countDocuments(),
-      Link.countDocuments({ isActive: true }),
+      Link.countDocuments({ isDeleted: false }),
       Link.aggregate([
         {
           $group: {
