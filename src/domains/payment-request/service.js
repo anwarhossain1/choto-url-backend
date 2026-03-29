@@ -1,3 +1,4 @@
+import { getPagination } from "../../utils/pagination.js";
 import PaymentRequest from "./schema.js";
 
 const PLAN_PRICES = {
@@ -57,4 +58,59 @@ export const createPaymentRequest = async (req) => {
   });
 
   return paymentRequest;
+};
+
+export const getMyPaymentRequests = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  try {
+    const [total, result] = await Promise.all([
+      PaymentRequest.countDocuments({ userId: req.user.userId }),
+      PaymentRequest.find({ userId: req.user.userId })
+        .skip((page - 1) * limit)
+        .limit(parseInt(limit))
+        .sort({ createdAt: -1 }),
+    ]);
+
+    const pagination = getPagination({ page, limit, total });
+    return res.status(200).json({
+      success: true,
+      message: "Payment requests fetched successfully",
+      data: result,
+      pagination,
+    });
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      success: false,
+      status: error.status || 500,
+      message: error.message || "Failed to fetch payment requests",
+      data: null,
+    });
+  }
+};
+
+export const getAdminPaymentRequests = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query;
+  try {
+    const [total, result] = await Promise.all([
+      PaymentRequest.countDocuments(),
+      PaymentRequest.find()
+        .skip((page - 1) * limit)
+        .limit(parseInt(limit))
+        .sort({ createdAt: -1 }),
+    ]);
+    const pagination = getPagination({ page, limit, total });
+    return res.status(200).json({
+      success: true,
+      message: "Payment requests fetched successfully",
+      data: result,
+      pagination,
+    });
+  } catch (error) {
+    return res.status(error.status || 500).json({
+      success: false,
+      status: error.status || 500,
+      message: error.message || "Failed to fetch payment requests",
+      data: null,
+    });
+  }
 };
