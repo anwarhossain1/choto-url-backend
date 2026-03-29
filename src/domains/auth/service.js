@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { env } from "../../config/env.js";
 import sendEmail from "../../emails/emailService.js";
+import { accountCreatedTemplate } from "../../emails/templates/accountCreatedTemplate.js";
 import { forgotPasswordTemplate } from "../../emails/templates/forgotPassword.js";
 import { resetPasswordSuccessTemplate } from "../../emails/templates/resetPassword.js";
 import User from "./schema.js";
@@ -21,6 +22,16 @@ export const createUser = async (payload) => {
       passwordHash: password, // pre-save will hash it
     });
     const user = await User.findById(createdUser._id); // passwordHash excluded
+    const loginURL = env.frontendUrl + "/auth/sign-in";
+    const html = accountCreatedTemplate({
+      loginURL: loginURL,
+      name: user.name,
+    });
+    await sendEmail({
+      to: user.email,
+      subject: "Your Account Has Been Created",
+      html,
+    });
     return user;
   } catch (error) {
     if (err.code === 11000) {
