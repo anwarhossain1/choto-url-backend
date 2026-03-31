@@ -206,7 +206,7 @@ export const approvePaymentRequest = async (req, res) => {
       validUntil: currentPeriodEnd,
     });
     await sendEmail({
-      to: "irishkhan33@gmail.com",
+      to: user.email,
       subject: "Your Payment Request Has Been Approved",
       html,
     });
