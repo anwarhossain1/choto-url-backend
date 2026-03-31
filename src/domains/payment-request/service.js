@@ -1,6 +1,7 @@
+import mongoose from "mongoose";
 import { getPagination } from "../../utils/pagination.js";
+import User from "../auth/schema.js";
 import PaymentRequest from "./schema.js";
-
 const PLAN_PRICES = {
   professional: 499,
   enterprise: 999,
@@ -112,5 +113,106 @@ export const getAdminPaymentRequests = async (req, res) => {
       message: error.message || "Failed to fetch payment requests",
       data: null,
     });
+  }
+};
+
+const addMonths = (date, months) => {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+};
+
+const addYears = (date, years) => {
+  const d = new Date(date);
+  d.setFullYear(d.getFullYear() + years);
+  return d;
+};
+
+export const approvePaymentRequest = async (req, res) => {
+  const { id } = req.params;
+
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const paymentRequest = await PaymentRequest.findById(id).session(session);
+
+    if (!paymentRequest) {
+      throw new Error("Payment request not found");
+    }
+
+    if (paymentRequest.status !== "pending") {
+      throw new Error("Only pending requests can be approved");
+    }
+
+    const user = await User.findById(paymentRequest.userId).session(session);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const now = new Date();
+
+    const currentEnd = user.subscription?.currentPeriodEnd;
+
+    const isValidDate = currentEnd && !isNaN(new Date(currentEnd).getTime());
+
+    const baseDate =
+      isValidDate && new Date(currentEnd) > now ? new Date(currentEnd) : now;
+
+    // 🔥 determine plan duration
+    let currentPeriodEnd;
+
+    if (paymentRequest.billingCycle === "yearly") {
+      currentPeriodEnd = addYears(baseDate, 1);
+    } else {
+      currentPeriodEnd = addMonths(baseDate, 1);
+    }
+
+    // ✅ update user subscription
+    user.subscription = {
+      ...user.subscription,
+      plan: paymentRequest.plan, // must exist in request
+      status: "active",
+      currentPeriodStart: now,
+      currentPeriodEnd,
+      cancelAtPeriodEnd: false,
+      provider: "manual",
+      approvedBy: req.user.userId,
+      approvedAt: now,
+      providerCustomerId: null,
+      providerSubscriptionId: null,
+    };
+
+    await user.save({ session });
+
+    // ✅ update payment request
+    paymentRequest.status = "approved";
+    paymentRequest.reviewedAt = now;
+    paymentRequest.reviewedBy = req.user.userId;
+
+    await paymentRequest.save({ session });
+
+    await session.commitTransaction();
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment request approved successfully",
+      data: {
+        paymentRequestId: paymentRequest._id,
+        plan: user.subscription.plan,
+        validUntil: user.subscription.currentPeriodEnd,
+      },
+    });
+  } catch (error) {
+    await session.abortTransaction();
+
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to approve payment request",
+    });
+  } finally {
+    session.endSession();
   }
 };

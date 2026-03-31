@@ -31,6 +31,12 @@ const paymentRequestSchema = new mongoose.Schema(
       enum: ["bkash", "nagad", "rocket", "bank"],
       required: true,
     },
+    billingCycle: {
+      type: String,
+      enum: ["monthly", "yearly"],
+      required: true,
+      default: "monthly",
+    },
 
     transactionId: {
       type: String,

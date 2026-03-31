@@ -4,6 +4,7 @@ import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { verifyAdminAccessToken } from "../../middlewares/auth/verifyAdminAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import {
+  approvePaymentRequest,
   createPaymentRequest,
   getAdminPaymentRequests,
   getMyPaymentRequests,
@@ -46,6 +47,12 @@ router.post(
       });
     }
   },
+);
+router.patch(
+  "/payment-requests/:id/approve",
+  verifyAdminAccessToken,
+  logRequest({}),
+  approvePaymentRequest,
 );
 
 export default router;
