@@ -76,7 +76,10 @@ const userSchema = new mongoose.Schema(
         enum: ["free", "starter", "professional", "enterprise"],
         default: "free",
       },
-
+      price: {
+        type: Number,
+        default: 0,
+      },
       status: {
         type: String,
         enum: ["active", "trialing", "past_due", "canceled"],

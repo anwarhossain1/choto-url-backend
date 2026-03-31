@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import sendEmail from "../../emails/emailService.js";
+import { paymentApprovedTemplate } from "../../emails/templates/paymentApprovedTemplate.js";
 import { getPagination } from "../../utils/pagination.js";
 import User from "../auth/schema.js";
 import PaymentRequest from "./schema.js";
@@ -174,6 +176,7 @@ export const approvePaymentRequest = async (req, res) => {
     user.subscription = {
       ...user.subscription,
       plan: paymentRequest.plan, // must exist in request
+      price: PLAN_PRICES[paymentRequest.plan],
       status: "active",
       currentPeriodStart: now,
       currentPeriodEnd,
@@ -195,7 +198,18 @@ export const approvePaymentRequest = async (req, res) => {
     await paymentRequest.save({ session });
 
     await session.commitTransaction();
-
+    const html = paymentApprovedTemplate({
+      userName: user.name,
+      plan: paymentRequest.plan,
+      amount: paymentRequest.amount,
+      billingCycle: paymentRequest.billingCycle,
+      validUntil: currentPeriodEnd,
+    });
+    await sendEmail({
+      to: "irishkhan33@gmail.com",
+      subject: "Your Payment Request Has Been Approved",
+      html,
+    });
     return res.status(200).json({
       success: true,
       message: "Payment request approved successfully",
