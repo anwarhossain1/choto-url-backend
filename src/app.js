@@ -3,26 +3,41 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
-import { env } from "./config/env.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import routes from "./routes.js";
 
 const app = express();
+
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://amarlink.com",
+  "https://www.amarlink.com",
+];
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS not allowed for origin: ${origin}`));
+  },
+  credentials: true,
+};
+
 app.use(express.json());
 app.use(helmet());
-// app.use(cors());
 app.use(morgan("dev"));
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.send("Welcome to the Choto URL Service!");
 });
-app.use(
-  cors({
-    origin: env.clientUrl,
-    credentials: true,
-  }),
-);
-app.use(cookieParser());
+
 app.use("/api", routes);
 app.use(errorHandler);
 
