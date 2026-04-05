@@ -9,9 +9,9 @@ import routes from "./routes.js";
 const app = express();
 
 const allowedOrigins = [
+  "https://www.amarlink.com",
   "http://localhost:3000",
   "https://amarlink.com",
-  "https://www.amarlink.com",
 ];
 
 const corsOptions = {
