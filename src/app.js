@@ -31,7 +31,6 @@ app.use(express.json());
 app.use(helmet());
 app.use(morgan("dev"));
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
 app.use(cookieParser());
 
 app.get("/", (req, res) => {
