@@ -41,8 +41,8 @@ app.get("/", (req, res) => {
   res.redirect(302, `${env.frontendUrl}/`);
   res.send("Welcome to the Choto URL Service!");
 });
-app.get("/:alias", (req, res) => {
-  res.redirect(302, `${env.frontendUrl}/404`);
+app.get("/:unknown", (req, res) => {
+  res.redirect(302, `${env.frontendUrl}/invalid-url`);
 });
 app.use("/", redirectRoute);
 app.use("/v1", routes);
