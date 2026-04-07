@@ -39,7 +39,7 @@ app.get("/", (req, res) => {
   res.send("Welcome to the Choto URL Service!");
 });
 
-app.use("/api", routes);
+app.use("/v1", routes);
 app.use(errorHandler);
 
 export default app;
