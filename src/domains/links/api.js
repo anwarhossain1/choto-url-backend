@@ -1,16 +1,9 @@
 import express from "express";
-import { env } from "../../config/env.js";
 import { optionalVerifyAccessToken } from "../../middlewares/auth/optionalVerifyAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
-import { burstLimiter } from "../../middlewares/rateLimiter.js";
 import { validateRequest } from "../../middlewares/request-validate/index.js";
-import { trackClick } from "../analytics/service.js";
-import { aliasSchema, createLinkSchema } from "./request.js";
-import {
-  createShortLink,
-  getLinkByAlias,
-  updateLinkClicks,
-} from "./service.js";
+import { createLinkSchema } from "./request.js";
+import { createShortLink } from "./service.js";
 const router = express.Router();
 
 router.post(
@@ -39,35 +32,5 @@ router.post(
   },
 );
 //
-
-router.get(
-  "/r/:alias",
-  logRequest({}),
-  burstLimiter,
-  validateRequest({ schema: aliasSchema, isParam: true }),
-  async (req, res) => {
-    const { alias } = req.params;
-    try {
-      const link = await getLinkByAlias(alias);
-      if (!link || !link.isActive || link.isDeleted) {
-        return res.redirect(302, `${env.frontendUrl}/404`);
-        return res.status(404).json({
-          message: "Link not found",
-          success: false,
-        });
-      }
-      updateLinkClicks(link._id).catch((err) => console.error(err));
-      trackClick({ linkId: link._id, alias: link.alias, req }).catch((err) =>
-        console.error(err),
-      );
-      return res.redirect(302, link.longUrl);
-    } catch (error) {
-      res.status(500).json({
-        message: "Server Error",
-        success: false,
-      });
-    }
-  },
-);
 
 export default router;

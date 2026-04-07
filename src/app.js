@@ -3,6 +3,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
+import redirectRoute from "./domains/links/redirectApi.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import routes from "./routes.js";
 
@@ -38,7 +39,7 @@ app.use(cookieParser());
 app.get("/", (req, res) => {
   res.send("Welcome to the Choto URL Service!");
 });
-
+app.use("/", redirectRoute);
 app.use("/v1", routes);
 app.use(errorHandler);
 
