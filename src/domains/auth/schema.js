@@ -35,9 +35,34 @@ const userSchema = new mongoose.Schema(
       //   index: true,
     },
 
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      default: null,
+    },
+
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
+
+    avatar: {
+      type: String,
+      default: null,
+    },
+
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
+
     passwordHash: {
       type: String,
-      required: true,
+      required: function () {
+        return this.authProvider !== "google";
+      },
       minlength: 6,
       select: false,
     },
@@ -134,6 +159,7 @@ const userSchema = new mongoose.Schema(
 
 // 🔐 Hash password before saving
 userSchema.pre("save", async function () {
+  if (!this.passwordHash) return;
   if (!this.isModified("passwordHash")) return;
   const salt = await bcrypt.genSalt(12);
   this.passwordHash = await bcrypt.hash(this.passwordHash, salt);

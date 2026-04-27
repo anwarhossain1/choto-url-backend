@@ -1,11 +1,10 @@
 import express from "express";
-import jwt from "jsonwebtoken";
-import { env } from "../../config/env.js";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { verifyAdminAccessToken } from "../../middlewares/auth/verifyAdminAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import { validateRequest } from "../../middlewares/request-validate/index.js";
 import {
+  googleLoginSchema,
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
@@ -13,6 +12,8 @@ import {
 } from "./request.js";
 import {
   createUser,
+  googleLogin,
+  issueAuthSession,
   forgotPassword,
   loginUser,
   logout,
@@ -56,31 +57,15 @@ router.post(
             message: "Invalid email or password gt",
           });
         }
-        delete user.passwordHash;
-        // 4. Generate tokens
-        const accessToken = jwt.sign(
-          { userId: user._id, role: user.role },
-          env.accessTokenSecret,
-          { expiresIn: "1d" },
-        );
-        const refreshToken = jwt.sign(
-          { userId: user._id, role: user.role },
-          env.refreshTokenSecret,
-          { expiresIn: "7d" },
-        );
-        user.refreshTokens.push({ token: refreshToken });
-        await user.save();
-        // 🍪 Send refresh token as cookie
+        const { accessToken, refreshToken, user: userObj } =
+          await issueAuthSession(user);
+
         res.cookie("refreshToken", refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "strict",
           maxAge: 7 * 24 * 60 * 60 * 1000,
         });
-        // 🧹 Remove password
-        const userObj = user.toObject();
-        delete userObj.passwordHash;
-        delete userObj.refreshTokens;
 
         return res.status(201).json({
           message: "Login successfully",
@@ -96,6 +81,38 @@ router.post(
       });
     } catch (error) {
       res.status(400).json({
+        message: error.message,
+        success: false,
+      });
+    }
+  },
+);
+router.post(
+  "/auth/google",
+  logRequest({}),
+  validateRequest({ schema: googleLoginSchema, isParam: false }),
+  async (req, res) => {
+    try {
+      const user = await googleLogin(req.body.credential);
+      const { accessToken, refreshToken, user: userObj } =
+        await issueAuthSession(user);
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return res.status(200).json({
+        message: "Google login successful",
+        success: true,
+        status: 200,
+        accessToken,
+        data: userObj,
+      });
+    } catch (error) {
+      return res.status(error.statusCode || 400).json({
         message: error.message,
         success: false,
       });

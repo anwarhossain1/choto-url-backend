@@ -17,6 +17,7 @@ export const env = {
   refreshTokenSecret: process.env.REFRESH_TOKEN_SECRET,
   clientUrl: process.env.CLIENT_URL,
   frontendUrl: process.env.FRONTEND_URL,
+  googleClientId: process.env.GOOGLE_CLIENT_ID,
   emailUser: process.env.EMAIL_USER,
   emailPass: process.env.EMAIL_PASS,
 };
