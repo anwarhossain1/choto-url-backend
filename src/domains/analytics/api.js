@@ -1,7 +1,11 @@
 import express from "express";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
-import { getAnalyticsOverview, getBestPerformingLinks } from "./service.js";
+import {
+  getAnalyticsOverview,
+  getBestPerformingLinks,
+  getLinkAnalyticsOverview,
+} from "./service.js";
 
 const router = express.Router();
 
@@ -25,8 +29,6 @@ router.get(
     }
   },
 );
-export default router;
-
 router.get(
   "/my-analytics/top-links",
   logRequest({}),
@@ -57,3 +59,27 @@ router.get(
     }
   },
 );
+
+router.get(
+  "/my-analytics/links/:linkId",
+  logRequest({}),
+  verifyAccessToken,
+  async (req, res, next) => {
+    try {
+      const { linkId } = req.params;
+      const { days } = req.query;
+      const userId = req.user.userId;
+
+      const analytics = await getLinkAnalyticsOverview(userId, linkId, Number(days));
+
+      return res.json({
+        success: true,
+        data: analytics,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+export default router;

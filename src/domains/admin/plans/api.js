@@ -6,6 +6,7 @@ import {
   createPlan,
   deletePlan,
   getAllPlans,
+  markPlanAsPopular,
   updatePlan,
 } from "./service.js";
 import {
@@ -99,6 +100,28 @@ router.delete(
       return res.status(400).json({
         success: false,
         message: error.message || "Failed to delete plan",
+      });
+    }
+  },
+);
+
+router.patch(
+  "/plans/:id/popular",
+  verifyAdminAccessToken,
+  logRequest({}),
+  validateRequest({ schema: planIdParamSchema, isParam: true }),
+  async (req, res) => {
+    try {
+      const plan = await markPlanAsPopular(req.params.id);
+      return res.status(200).json({
+        success: true,
+        message: "Plan marked as popular",
+        data: plan,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to mark plan as popular",
       });
     }
   },

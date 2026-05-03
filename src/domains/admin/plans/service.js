@@ -149,3 +149,21 @@ export const deletePlan = async (planId) => {
 
   return { id: plan.id };
 };
+
+export const markPlanAsPopular = async (planId) => {
+  const plan = await Plan.findOne({ id: planId, isActive: true });
+
+  if (!plan) {
+    throw new Error("Plan not found");
+  }
+
+  await Plan.updateMany(
+    { isActive: true, isPopular: true },
+    { $set: { isPopular: false } },
+  );
+
+  plan.isPopular = true;
+  await plan.save();
+
+  return toPlanResponse(plan.toObject());
+};

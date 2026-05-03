@@ -119,13 +119,186 @@ export const getAnalyticsOverview = async (userId, days) => {
   }
 };
 
+const normalizeDeviceLabel = (device) => {
+  const rawType = device?.device?.type;
+
+  if (!rawType || rawType === "undefined") {
+    return "Desktop";
+  }
+
+  return rawType.charAt(0).toUpperCase() + rawType.slice(1);
+};
+
+const getSourceLabel = (referer) => {
+  if (!referer) return "Direct";
+
+  try {
+    return new URL(referer).hostname.replace(/^www\./, "");
+  } catch {
+    return "Direct";
+  }
+};
+
+const formatRelativeTime = (date) => {
+  const diffMs = Date.now() - new Date(date).getTime();
+  const diffMinutes = Math.max(1, Math.round(diffMs / 60000));
+
+  if (diffMinutes < 60) return `${diffMinutes} min ago`;
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} hr ago`;
+
+  const diffDays = Math.round(diffHours / 24);
+  return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+};
+
+export const getLinkAnalyticsOverview = async (userId, linkId, days) => {
+  try {
+    const allowedDays = [7, 30, 90, 365];
+
+    if (!allowedDays.includes(Number(days))) {
+      throw new Error("Invalid days parameter");
+    }
+
+    const link = await Link.findOne({ _id: linkId, userId, isDeleted: false }).lean();
+
+    if (!link) {
+      const error = new Error("Link not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const currentStart = new Date();
+    currentStart.setDate(currentStart.getDate() - Number(days));
+
+    const previousStart = new Date(currentStart);
+    previousStart.setDate(previousStart.getDate() - Number(days));
+
+    const [currentClicks, previousClicksCount] = await Promise.all([
+      Click.find({
+        linkId: link._id,
+        createdAt: { $gte: currentStart },
+      })
+        .sort({ createdAt: -1 })
+        .lean(),
+      Click.countDocuments({
+        linkId: link._id,
+        createdAt: { $gte: previousStart, $lt: currentStart },
+      }),
+    ]);
+
+    const totalClicks = currentClicks.length;
+    const uniqueVisitors = new Set(currentClicks.map((click) => click.ip)).size;
+    const avgClicksPerVisitor = uniqueVisitors
+      ? Number((totalClicks / uniqueVisitors).toFixed(2))
+      : 0;
+
+    const deviceCounts = new Map();
+    const sourceCounts = new Map();
+    const countryCounts = new Map();
+    const dailyCounts = new Map();
+
+    currentClicks.forEach((click) => {
+      const deviceLabel = normalizeDeviceLabel(click.device);
+      const sourceLabel = getSourceLabel(click.referer);
+      const countryLabel = click.location?.country || "Unknown";
+      const dayKey = new Date(click.createdAt).toISOString().slice(0, 10);
+
+      deviceCounts.set(deviceLabel, (deviceCounts.get(deviceLabel) || 0) + 1);
+      sourceCounts.set(sourceLabel, (sourceCounts.get(sourceLabel) || 0) + 1);
+      countryCounts.set(countryLabel, (countryCounts.get(countryLabel) || 0) + 1);
+      dailyCounts.set(dayKey, (dailyCounts.get(dayKey) || 0) + 1);
+    });
+
+    const toSortedList = (counts) =>
+      [...counts.entries()]
+        .sort(([, a], [, b]) => b - a)
+        .map(([label, count]) => ({ label, count }));
+
+    const deviceMix = toSortedList(deviceCounts).map((item) => ({
+      ...item,
+      share: totalClicks ? Number(((item.count / totalClicks) * 100).toFixed(1)) : 0,
+    }));
+
+    const referrers = toSortedList(sourceCounts).map((item) => ({
+      ...item,
+      share: totalClicks ? Number(((item.count / totalClicks) * 100).toFixed(1)) : 0,
+    }));
+
+    const sortedCountries = toSortedList(countryCounts);
+    const activeRegions = countryCounts.size;
+    const topCountry = sortedCountries[0]?.label || "Unknown";
+    const topDevice = deviceMix[0]?.label || "Desktop";
+
+    const trendDays = Math.min(Number(days), 7);
+    const trend = Array.from({ length: trendDays }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (trendDays - 1 - index));
+      const key = date.toISOString().slice(0, 10);
+
+      return {
+        label: date.toLocaleDateString("en-US", { weekday: "short" }),
+        value: dailyCounts.get(key) || 0,
+      };
+    });
+
+    const recentClicks = currentClicks.slice(0, 5).map((click) => ({
+      time: formatRelativeTime(click.createdAt),
+      country: click.location?.country || "Unknown",
+      device: normalizeDeviceLabel(click.device),
+      source: getSourceLabel(click.referer),
+    }));
+
+    const growthPercent = previousClicksCount
+      ? Number((((totalClicks - previousClicksCount) / previousClicksCount) * 100).toFixed(1))
+      : totalClicks > 0
+        ? 100
+        : 0;
+
+    return {
+      link: {
+        _id: link._id,
+        alias: link.alias,
+        longUrl: link.longUrl,
+        shortUrl: link.shortUrl,
+        clicks: link.clicks,
+        createdAt: link.createdAt,
+      },
+      overview: {
+        totalClicks,
+        uniqueVisitors,
+        avgClicksPerVisitor,
+        activeRegions,
+        topCountry,
+        topDevice,
+        growthPercent,
+      },
+      trend,
+      deviceMix,
+      referrers,
+      recentClicks,
+      periodDays: Number(days),
+    };
+  } catch (error) {
+    if (error.statusCode) {
+      throw error;
+    }
+
+    throw new Error(error.message);
+  }
+};
+
 export const getBestPerformingLinks = async (userId, subscriptionLimit) => {
   try {
     const bestLinks = await Link.find({ userId })
-      .sort({ clickCount: -1 })
+      .sort({ clicks: -1 })
       .limit(subscriptionLimit);
     return bestLinks;
   } catch (error) {
+    if (error.statusCode) {
+      throw error;
+    }
+
     throw new Error(error.message);
   }
 };
