@@ -18,7 +18,7 @@ const router = express.Router();
 router.get(
   "/my-profile",
   logRequest({}),
-  verifyAccessToken,
+  // verifyAccessToken,
   async (req, res, next) => {
     try {
       const userId = req.user.userId;
