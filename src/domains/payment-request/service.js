@@ -2,12 +2,22 @@ import mongoose from "mongoose";
 import sendEmail from "../../emails/emailService.js";
 import { paymentApprovedTemplate } from "../../emails/templates/paymentApprovedTemplate.js";
 import { getPagination } from "../../utils/pagination.js";
+import Plan from "../admin/plans/schema.js";
 import User from "../auth/schema.js";
 import PaymentRequest from "./schema.js";
-const PLAN_PRICES = {
-  professional: 499,
-  enterprise: 999,
-  starter: 9,
+
+const ALLOWED_PAYMENT_METHODS = ["bkash", "nagad", "rocket", "bank"];
+const ALLOWED_BILLING_CYCLES = ["monthly", "yearly"];
+
+const resolvePlanPricing = (plan, billingCycle) => {
+  const amount =
+    billingCycle === "yearly" ? plan.priceYearly ?? null : plan.priceMonthly ?? null;
+
+  if (amount === null || amount === undefined || Number(amount) < 1) {
+    throw new Error("Selected plan is not available for payment");
+  }
+
+  return Number(amount);
 };
 
 export const createPaymentRequest = async (req) => {
@@ -15,19 +25,36 @@ export const createPaymentRequest = async (req) => {
   const {
     plan,
     paymentMethod,
+    billingCycle = "monthly",
     transactionId,
     senderNumber,
     paymentProofImage,
     note,
   } = req.body;
 
-  if (!["professional", "enterprise", "starter"].includes(plan)) {
+  if (!plan || typeof plan !== "string") {
     throw new Error("Invalid plan selected");
   }
 
-  if (!["bkash", "nagad", "rocket", "bank"].includes(paymentMethod)) {
+  if (!ALLOWED_BILLING_CYCLES.includes(billingCycle)) {
+    throw new Error("Invalid billing cycle");
+  }
+
+  const selectedPlan = await Plan.findOne({ id: plan, isActive: true }).lean();
+
+  if (!selectedPlan) {
+    throw new Error("Invalid plan selected");
+  }
+
+  if (selectedPlan.id === "free") {
+    throw new Error("Free plan does not require payment");
+  }
+
+  if (!ALLOWED_PAYMENT_METHODS.includes(paymentMethod)) {
     throw new Error("Invalid payment method");
   }
+
+  const amount = resolvePlanPricing(selectedPlan, billingCycle);
 
   const existingPending = await PaymentRequest.findOne({
     userId,
@@ -50,9 +77,10 @@ export const createPaymentRequest = async (req) => {
   const paymentRequest = await PaymentRequest.create({
     userId,
     plan,
-    amount: PLAN_PRICES[plan],
+    amount,
     currency: "BDT",
     paymentMethod,
+    billingCycle,
     transactionId,
     senderNumber,
     paymentProofImage,
@@ -160,10 +188,8 @@ export const approvePaymentRequest = async (req, res) => {
 
     const isValidDate = currentEnd && !isNaN(new Date(currentEnd).getTime());
 
-    const baseDate =
-      isValidDate && new Date(currentEnd) > now ? new Date(currentEnd) : now;
+    const baseDate = isValidDate && new Date(currentEnd) > now ? new Date(currentEnd) : now;
 
-    // 🔥 determine plan duration
     let currentPeriodEnd;
 
     if (paymentRequest.billingCycle === "yearly") {
@@ -172,11 +198,10 @@ export const approvePaymentRequest = async (req, res) => {
       currentPeriodEnd = addMonths(baseDate, 1);
     }
 
-    // ✅ update user subscription
     user.subscription = {
       ...user.subscription,
-      plan: paymentRequest.plan, // must exist in request
-      price: PLAN_PRICES[paymentRequest.plan],
+      plan: paymentRequest.plan,
+      price: paymentRequest.amount,
       status: "active",
       currentPeriodStart: now,
       currentPeriodEnd,
@@ -190,7 +215,6 @@ export const approvePaymentRequest = async (req, res) => {
 
     await user.save({ session });
 
-    // ✅ update payment request
     paymentRequest.status = "approved";
     paymentRequest.reviewedAt = now;
     paymentRequest.reviewedBy = req.user.userId;
