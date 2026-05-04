@@ -2,13 +2,19 @@ import express from "express";
 import { sendTelegramMessage } from "../../libraries/telegram.js";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { verifyAdminAccessToken } from "../../middlewares/auth/verifyAdminAccessToken.js";
+import { validateRequest } from "../../middlewares/request-validate/index.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import {
   approvePaymentRequest,
   createPaymentRequest,
   getAdminPaymentRequests,
   getMyPaymentRequests,
+  rejectPaymentRequest,
 } from "./service.js";
+import {
+  paymentRequestIdParamSchema,
+  rejectPaymentRequestSchema,
+} from "./request.js";
 
 const router = express.Router();
 
@@ -53,6 +59,15 @@ router.patch(
   verifyAdminAccessToken,
   logRequest({}),
   approvePaymentRequest,
+);
+
+router.patch(
+  "/payment-requests/:id/reject",
+  verifyAdminAccessToken,
+  logRequest({}),
+  validateRequest({ schema: paymentRequestIdParamSchema, isParam: true }),
+  validateRequest({ schema: rejectPaymentRequestSchema }),
+  rejectPaymentRequest,
 );
 
 export default router;

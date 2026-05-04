@@ -254,3 +254,42 @@ export const approvePaymentRequest = async (req, res) => {
     session.endSession();
   }
 };
+
+export const rejectPaymentRequest = async (req, res) => {
+  const { id } = req.params;
+  const { rejectedReason } = req.body;
+
+  try {
+    const paymentRequest = await PaymentRequest.findById(id);
+
+    if (!paymentRequest) {
+      throw new Error("Payment request not found");
+    }
+
+    if (paymentRequest.status !== "pending") {
+      throw new Error("Only pending requests can be rejected");
+    }
+
+    paymentRequest.status = "rejected";
+    paymentRequest.rejectionReason = rejectedReason.trim();
+    paymentRequest.reviewedBy = req.user.userId;
+    paymentRequest.reviewedAt = new Date();
+
+    await paymentRequest.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment request rejected successfully",
+      data: {
+        paymentRequestId: paymentRequest._id,
+        status: paymentRequest.status,
+        rejectionReason: paymentRequest.rejectionReason,
+      },
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || "Failed to reject payment request",
+    });
+  }
+};
