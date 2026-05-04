@@ -2,6 +2,9 @@ import express from "express";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import {
+  buildAnalyticsCsv,
+  createAnalyticsPdf,
+  getAnalyticsExportData,
   getAnalyticsOverview,
   getBestPerformingLinks,
   getLinkAnalyticsOverview,
@@ -24,6 +27,45 @@ router.get(
         success: true,
         data: analytics,
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.get(
+  "/my-analytics/export",
+  logRequest({}),
+  verifyAccessToken,
+  async (req, res, next) => {
+    try {
+      const { days = 7, format = "csv" } = req.query;
+      const userId = req.user.userId;
+      const normalizedFormat = String(format).toLowerCase();
+
+      if (!["csv", "pdf"].includes(normalizedFormat)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid export format",
+        });
+      }
+
+      const exportData = await getAnalyticsExportData(userId, Number(days));
+      const fileBase = `choto-url-report-${exportData.periodDays}d`;
+
+      if (normalizedFormat === "csv") {
+        const csv = buildAnalyticsCsv(exportData);
+
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader("Content-Disposition", `attachment; filename="${fileBase}.csv"`);
+
+        return res.status(200).send(`\ufeff${csv}`);
+      }
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${fileBase}.pdf"`);
+
+      return createAnalyticsPdf(res, exportData);
     } catch (error) {
       next(error);
     }
