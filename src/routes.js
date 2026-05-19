@@ -8,6 +8,7 @@ import linkRoutes from "./domains/links/api.js";
 import publicPlansRoutes from "./domains/plans/api.js";
 import myLinksRoutes from "./domains/my-links/api.js";
 import myProfileRoutes from "./domains/my-profile/api.js";
+import reviewRoutes from "./domains/reviews/api.js";
 import paymentRequestRoute from "./domains/payment-request/api.js";
 const router = express.Router();
 
@@ -22,6 +23,7 @@ router.use(myLinksRoutes);
 router.use(myProfileRoutes);
 router.use(myAnalyticsRoutes);
 router.use(publicPlansRoutes);
+router.use(reviewRoutes);
 router.use("/admin", adminDashboardRoutes);
 router.use("/admin", adminPlansRoutes);
 router.use("/admin", adminDashboardUsersRoutes);
