@@ -1,5 +1,6 @@
 import express from "express";
 import adminDashboardRoutes from "./domains/admin/dashboard/api.js";
+import adminLinksRoutes from "./domains/admin/links/api.js";
 import adminPlansRoutes from "./domains/admin/plans/api.js";
 import adminDashboardUsersRoutes from "./domains/admin/users/api.js";
 import myAnalyticsRoutes from "./domains/analytics/api.js";
@@ -25,6 +26,7 @@ router.use(myAnalyticsRoutes);
 router.use(publicPlansRoutes);
 router.use(reviewRoutes);
 router.use("/admin", adminDashboardRoutes);
+router.use("/admin", adminLinksRoutes);
 router.use("/admin", adminPlansRoutes);
 router.use("/admin", adminDashboardUsersRoutes);
 
