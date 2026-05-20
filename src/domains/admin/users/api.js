@@ -10,10 +10,12 @@ router.get(
   logRequest({}),
   async (req, res) => {
     try {
-      const users = await getAllUsers();
+      const { users, pagination } = await getAllUsers(req.query);
       return res.status(200).json({
         success: true,
+        message: "Users fetched successfully",
         data: users,
+        pagination,
       });
     } catch (error) {
       console.error(error);
