@@ -2,11 +2,31 @@ import express from "express";
 import mongoose from "mongoose";
 import { verifyAdminAccessToken } from "../../../middlewares/auth/verifyAdminAccessToken.js";
 import { logRequest } from "../../../middlewares/log/index.js";
+import { validateRequest } from "../../../middlewares/request-validate/index.js";
 import Link from "../../links/schema.js";
 import Click from "../../analytics/schema.js";
-import { getAllUsers, getUserById, getUserLinks } from "./service.js";
+import {
+  getAllUsers,
+  getUserById,
+  getUserLinks,
+} from "./service.js";
+import {
+  activateUser,
+  changeUserRole,
+  changeUserSubscription,
+  deleteUser,
+  forceLogoutUser,
+  suspendUser,
+  verifyUserEmail,
+} from "./service.js";
+import {
+  suspendUserSchema,
+  changeRoleSchema,
+  changeSubscriptionSchema,
+} from "./request.js";
 
 const router = express.Router();
+
 router.get(
   "/users",
   verifyAdminAccessToken,
@@ -147,6 +167,156 @@ router.get(
       return res.status(500).json({
         success: false,
         message: error.message || "Failed to fetch link analytics",
+      });
+    }
+  },
+);
+
+router.post(
+  "/users/:id/suspend",
+  verifyAdminAccessToken,
+  logRequest({}),
+  validateRequest({ schema: suspendUserSchema, isParam: false }),
+  async (req, res) => {
+    try {
+      const user = await suspendUser(req.params.id, req.body.reason);
+      return res.status(200).json({
+        success: true,
+        message: "User suspended successfully",
+        data: user,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to suspend user",
+      });
+    }
+  },
+);
+
+router.post(
+  "/users/:id/activate",
+  verifyAdminAccessToken,
+  logRequest({}),
+  async (req, res) => {
+    try {
+      const user = await activateUser(req.params.id);
+      return res.status(200).json({
+        success: true,
+        message: "User activated successfully",
+        data: user,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to activate user",
+      });
+    }
+  },
+);
+
+router.post(
+  "/users/:id/change-role",
+  verifyAdminAccessToken,
+  logRequest({}),
+  validateRequest({ schema: changeRoleSchema, isParam: false }),
+  async (req, res) => {
+    try {
+      const user = await changeUserRole(req.params.id, req.body.role);
+      return res.status(200).json({
+        success: true,
+        message: "User role changed successfully",
+        data: user,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to change user role",
+      });
+    }
+  },
+);
+
+router.post(
+  "/users/:id/change-subscription",
+  verifyAdminAccessToken,
+  logRequest({}),
+  validateRequest({ schema: changeSubscriptionSchema, isParam: false }),
+  async (req, res) => {
+    try {
+      const user = await changeUserSubscription(req.params.id, req.body);
+      return res.status(200).json({
+        success: true,
+        message: "Subscription updated successfully",
+        data: user,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to update subscription",
+      });
+    }
+  },
+);
+
+router.post(
+  "/users/:id/verify-email",
+  verifyAdminAccessToken,
+  logRequest({}),
+  async (req, res) => {
+    try {
+      const user = await verifyUserEmail(req.params.id);
+      return res.status(200).json({
+        success: true,
+        message: "Email verified successfully",
+        data: user,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to verify email",
+      });
+    }
+  },
+);
+
+router.post(
+  "/users/:id/force-logout",
+  verifyAdminAccessToken,
+  logRequest({}),
+  async (req, res) => {
+    try {
+      const user = await forceLogoutUser(req.params.id);
+      return res.status(200).json({
+        success: true,
+        message: "User logged out successfully",
+        data: user,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to force logout",
+      });
+    }
+  },
+);
+
+router.delete(
+  "/users/:id",
+  verifyAdminAccessToken,
+  logRequest({}),
+  async (req, res) => {
+    try {
+      const result = await deleteUser(req.params.id);
+      return res.status(200).json({
+        success: true,
+        message: "User and associated data deleted permanently",
+        data: result,
+      });
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.message || "Failed to delete user",
       });
     }
   },

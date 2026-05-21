@@ -115,3 +115,100 @@ export const getUserLinks = async (userId) => {
     throw new Error(error.message || "Failed to fetch user links");
   }
 };
+
+export const suspendUser = async (userId, reason = "") => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+  if (user.role === "admin") throw new Error("Cannot suspend an admin user");
+
+  user.isActive = false;
+  user.suspendedAt = new Date();
+  user.suspensionReason = reason;
+  await user.save();
+
+  const { passwordHash, refreshTokens, ...safe } = user.toObject();
+  return safe;
+};
+
+export const activateUser = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  user.isActive = true;
+  user.suspendedAt = null;
+  user.suspensionReason = null;
+  await user.save();
+
+  const { passwordHash, refreshTokens, ...safe } = user.toObject();
+  return safe;
+};
+
+export const changeUserRole = async (userId, role) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+  if (role === "admin" && user.role === "admin") throw new Error("User is already an admin");
+  if (role === "user" && user.role === "user") throw new Error("User is already a regular user");
+
+  user.role = role;
+  await user.save();
+
+  const { passwordHash, refreshTokens, ...safe } = user.toObject();
+  return safe;
+};
+
+export const changeUserSubscription = async (userId, { plan, status }) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  user.subscription.plan = plan;
+  if (status) user.subscription.status = status;
+  await user.save();
+
+  const { passwordHash, refreshTokens, ...safe } = user.toObject();
+  return safe;
+};
+
+export const verifyUserEmail = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+  if (user.isEmailVerified) throw new Error("Email is already verified");
+
+  user.isEmailVerified = true;
+  user.emailVerificationToken = undefined;
+  await user.save();
+
+  const { passwordHash, refreshTokens, ...safe } = user.toObject();
+  return safe;
+};
+
+export const forceLogoutUser = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  user.tokenVersion += 1;
+  user.refreshTokens = [];
+  await user.save();
+
+  const { passwordHash, refreshTokens, ...safe } = user.toObject();
+  return safe;
+};
+
+export const deleteUser = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+  if (user.role === "admin") throw new Error("Cannot delete an admin user");
+
+  // Delete all user's links and click data
+  const userLinks = await Link.find({ userId }).lean();
+  const linkIds = userLinks.map((l) => l._id);
+  if (linkIds.length > 0) {
+    await Click.deleteMany({ linkId: { $in: linkIds } });
+    await Link.deleteMany({ _id: { $in: linkIds } });
+  }
+
+  // Delete user's refresh tokens and remove user
+  user.refreshTokens = [];
+  await User.deleteOne({ _id: userId });
+
+  return { deletedUserId: userId, deletedLinks: linkIds.length };
+};

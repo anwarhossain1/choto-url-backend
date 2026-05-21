@@ -78,6 +78,21 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
 
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    suspendedAt: {
+      type: Date,
+      default: null,
+    },
+
+    suspensionReason: {
+      type: String,
+      default: null,
+    },
+
     emailVerificationToken: {
       type: String,
     },

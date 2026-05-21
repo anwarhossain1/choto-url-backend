@@ -57,6 +57,12 @@ router.post(
             message: "Invalid email or password gt",
           });
         }
+        if (!user.isActive) {
+          return res.status(403).json({
+            success: false,
+            message: user.suspensionReason || "Your account has been suspended. Contact support.",
+          });
+        }
         const { accessToken, refreshToken, user: userObj } =
           await issueAuthSession(user);
 
