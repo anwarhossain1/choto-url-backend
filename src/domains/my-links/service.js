@@ -1,13 +1,15 @@
 import logger from "../../libraries/log/logger.js";
 import { getPagination } from "../../utils/pagination.js";
 import Link from "../links/schema.js";
-export const getMyLinks = async (req, res) => {
+import Plan from "../admin/plans/schema.js";
+import User from "../auth/schema.js";
+export const getMyLinks = async (req) => {
   try {
     const userId = req.user.userId;
     const guestId = req.cookies.guestId;
-    const { page, limit } = req.query;
-    const pageNumber = parseInt(page);
-    const limitNumber = parseInt(limit);
+    const { page, limit, search } = req.query;
+    const pageNumber = parseInt(page) || 1;
+    const limitNumber = parseInt(limit) || 10;
     if (guestId) {
       await Link.updateMany(
         {
@@ -20,16 +22,24 @@ export const getMyLinks = async (req, res) => {
         },
       );
     }
+    const filter = { userId, isDeleted: false };
+    if (search && search.trim()) {
+      const regex = new RegExp(search.trim(), "i");
+      filter.$or = [
+        { alias: regex },
+        { shortUrl: regex },
+        { longUrl: regex },
+      ];
+    }
     const skip = (pageNumber - 1) * limitNumber;
     const [links, total] = await Promise.all([
-      Link.find({ userId, isDeleted: false })
+      Link.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limitNumber),
-      Link.countDocuments({ userId, isDeleted: false }),
+      Link.countDocuments(filter),
     ]);
-    const pagination = getPagination({ page, limit, total });
-    logger.info("Links fetched successfully");
+    const pagination = getPagination({ page: pageNumber, limit: limitNumber, total });
 
     return {
       data: links,
@@ -79,4 +89,44 @@ export const restoreLink = async (userId, linkId) => {
   await link.save();
 
   return { message: "Link restored successfully" };
+};
+
+export const setLinkReportAccess = async (userId, linkId, isEnabledForReport) => {
+  const link = await Link.findOne({ _id: linkId, userId, isDeleted: false });
+  if (!link) throw new Error("Link not found");
+
+  const user = await User.findById(userId);
+  if (!user) throw new Error("User not found");
+
+  if (isEnabledForReport) {
+    const plan = await Plan.findOne({ id: user.subscription.plan });
+    const limit = plan?.reportsLinksPerMonth;
+
+    if (limit !== null && !link.isEnabledForReport) {
+      const enabledCount = await Link.countDocuments({
+        userId,
+        isEnabledForReport: true,
+        isDeleted: false,
+      });
+
+      if (enabledCount >= limit) {
+        throw new Error(
+          `Report access limit reached. You can enable up to ${limit} link${limit === 1 ? "" : "s"}.`,
+        );
+      }
+    }
+  } else {
+    if (user.subscription.plan === "free") {
+      throw new Error(
+        "Free plan users cannot disable report access. Upgrade your plan to manage report links.",
+      );
+    }
+  }
+
+  link.isEnabledForReport = isEnabledForReport;
+  await link.save();
+
+  return {
+    message: `Report access ${isEnabledForReport ? "enabled" : "disabled"} successfully`,
+  };
 };

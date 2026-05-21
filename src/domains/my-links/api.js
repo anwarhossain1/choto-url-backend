@@ -4,23 +4,24 @@ import { logRequest } from "../../middlewares/log/index.js";
 import {
   getMyLinks,
   hardDeleteLink,
+  setLinkReportAccess,
   restoreLink,
   softDeleteLink,
 } from "./service.js";
 
 const router = express.Router();
 router.get("/my-links", logRequest({}), verifyAccessToken, async (req, res) => {
-  const { page, limit } = req.query;
-  if (!page || !limit) {
+  const { page, limit, search } = req.query;
+  if (!search && (!page || !limit)) {
     return res.status(400).json({
       success: false,
-      message: "Page and limit are required",
+      message: "Page and limit are required for listing",
     });
   }
   try {
     const myLinksResponse = await getMyLinks(req);
     if (myLinksResponse) {
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
         ...myLinksResponse,
       });
@@ -52,6 +53,41 @@ router.delete(
       });
     } catch (error) {
       return res.status(500).json({
+        success: false,
+        message: error.message || "Something went wrong",
+      });
+    }
+  },
+);
+
+router.patch(
+  "/my-links/:id/report-access",
+  logRequest({}),
+  verifyAccessToken,
+  async (req, res) => {
+    const { id } = req.params;
+    const { isEnabledForReport } = req.body;
+
+    if (typeof isEnabledForReport !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "isEnabledForReport is required",
+      });
+    }
+
+    try {
+      const result = await setLinkReportAccess(
+        req.user.userId,
+        id,
+        isEnabledForReport,
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      return res.status(400).json({
         success: false,
         message: error.message || "Something went wrong",
       });

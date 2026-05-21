@@ -979,6 +979,12 @@ export const getLinkAnalyticsOverview = async (userId, linkId, days) => {
       throw error;
     }
 
+    if (!link.isEnabledForReport) {
+      const error = new Error("This link doesn't support any analytics");
+      error.statusCode = 403;
+      throw error;
+    }
+
     const currentStart = new Date();
     currentStart.setDate(currentStart.getDate() - Number(days));
 

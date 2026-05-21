@@ -42,6 +42,10 @@ const linkSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isEnabledForReport: {
+      type: Boolean,
+      default: false,
+    },
     isDeleted: {
       type: Boolean,
       default: false,

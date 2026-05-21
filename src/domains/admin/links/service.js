@@ -21,6 +21,7 @@ const toAdminLink = (link) => ({
   qrCode: link.qrCode,
   clicks: link.clicks,
   isActive: link.isActive,
+  isEnabledForReport: link.isEnabledForReport,
   isDeleted: link.isDeleted,
   deletedAt: link.deletedAt,
   expiresAt: link.expiresAt,

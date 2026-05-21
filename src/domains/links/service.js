@@ -42,6 +42,7 @@ export const createShortLink = async (req, res) => {
     longUrl,
     shortUrl,
     qrCode,
+    isEnabledForReport: false,
   });
 };
 
