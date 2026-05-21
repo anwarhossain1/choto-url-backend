@@ -538,13 +538,18 @@ export const getAnalyticsOverview = async (userId, days) => {
 
     const totalLinks = linkIds.length;
 
+    const linksInRange = await Link.countDocuments({
+      userId,
+      createdAt: { $gte: startDate },
+    });
+
     if (totalLinks === 0) {
       return {
         overview: {
           totalLinks: 0,
+          linksInRange: 0,
           totalClicks: 0,
           uniqueClicks: 0,
-          clickRate: 0,
           clickRate: "0%",
         },
       };
@@ -572,6 +577,7 @@ export const getAnalyticsOverview = async (userId, days) => {
     return {
       overview: {
         totalLinks,
+        linksInRange,
         totalClicks,
         uniqueClicks,
         clickRate: `${clickRateValue.toFixed(2)}%`,
