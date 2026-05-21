@@ -9,6 +9,7 @@ import {
   createPaymentRequest,
   getAdminPaymentRequests,
   getMyPaymentRequests,
+  getPaymentRequestsSummary,
   rejectPaymentRequest,
 } from "./service.js";
 import {
@@ -17,6 +18,13 @@ import {
 } from "./request.js";
 
 const router = express.Router();
+
+router.get(
+  "/payment-requests/summary",
+  verifyAdminAccessToken,
+  logRequest({}),
+  getPaymentRequestsSummary,
+);
 
 router.get(
   "/payment-requests",

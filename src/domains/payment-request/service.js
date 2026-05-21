@@ -119,6 +119,42 @@ export const getMyPaymentRequests = async (req, res) => {
   }
 };
 
+export const getPaymentRequestsSummary = async (req, res) => {
+  try {
+    const [stats] = await PaymentRequest.aggregate([
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          approved: { $sum: { $cond: [{ $eq: ["$status", "approved"] }, 1, 0] } },
+          pending: { $sum: { $cond: [{ $eq: ["$status", "pending"] }, 1, 0] } },
+          rejected: { $sum: { $cond: [{ $eq: ["$status", "rejected"] }, 1, 0] } },
+          approvedVolume: { $sum: { $cond: [{ $eq: ["$status", "approved"] }, "$amount", 0] } },
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      message: "Payment requests summary fetched successfully",
+      data: stats
+        ? {
+            total: stats.total,
+            approved: stats.approved,
+            pending: stats.pending,
+            rejected: stats.rejected,
+            approvedVolume: stats.approvedVolume,
+          }
+        : { total: 0, approved: 0, pending: 0, rejected: 0, approvedVolume: 0 },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message || "Failed to fetch summary",
+    });
+  }
+};
+
 export const getAdminPaymentRequests = async (req, res) => {
   const { page = 1, limit = 10 } = req.query;
   try {
