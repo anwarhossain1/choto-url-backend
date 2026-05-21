@@ -1,6 +1,7 @@
 import express from "express";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
+import User from "../auth/schema.js";
 import {
   buildAnalyticsCsv,
   createAnalyticsPdf,
@@ -47,6 +48,21 @@ router.get(
         return res.status(400).json({
           success: false,
           message: "Invalid export format",
+        });
+      }
+
+      const user = await User.findById(userId).select("subscription.plan");
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      if (user.subscription?.plan === "free") {
+        return res.status(403).json({
+          success: false,
+          message: "Report download is available on paid plans only. Please upgrade your plan.",
         });
       }
 
