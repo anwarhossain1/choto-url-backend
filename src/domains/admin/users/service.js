@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import User from "../../auth/schema.js";
+import Link from "../../links/schema.js";
 const buildSearchMatch = (search) => {
   if (!search) return null;
 
@@ -87,5 +89,29 @@ export const getAllUsers = async ({ page = 1, limit = 10, search = "", range = "
     };
   } catch (error) {
     throw new Error("Failed to fetch users");
+  }
+};
+
+export const getUserById = async (userId) => {
+  try {
+    const user = await User.findById(userId, "-passwordHash -refreshTokens -__v").lean();
+    if (!user) throw new Error("User not found");
+    return user;
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch user");
+  }
+};
+
+export const getUserLinks = async (userId) => {
+  try {
+    const objectId = new mongoose.Types.ObjectId(userId);
+    const links = await Link.find({
+      $or: [{ userId: objectId }, { userId: userId }],
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+    return links;
+  } catch (error) {
+    throw new Error(error.message || "Failed to fetch user links");
   }
 };

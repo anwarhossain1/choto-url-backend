@@ -1,5 +1,6 @@
 import express from "express";
 import { verifyAccessToken } from "../../middlewares/auth/verifyAccessToken.js";
+import { verifyAdminAccessToken } from "../../middlewares/auth/verifyAdminAccessToken.js";
 import { logRequest } from "../../middlewares/log/index.js";
 import User from "../auth/schema.js";
 import {
@@ -129,6 +130,27 @@ router.get(
       const userId = req.user.userId;
 
       const analytics = await getLinkAnalyticsOverview(userId, linkId, Number(days));
+
+      return res.json({
+        success: true,
+        data: analytics,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.get(
+  "/my-analytics/admin/:userId/links/:linkId",
+  logRequest({}),
+  verifyAdminAccessToken,
+  async (req, res, next) => {
+    try {
+      const { userId, linkId } = req.params;
+      const { days } = req.query;
+
+      const analytics = await getLinkAnalyticsOverview(userId, linkId, Number(days), true);
 
       return res.json({
         success: true,

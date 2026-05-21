@@ -959,7 +959,7 @@ export const buildAnalyticsCsv = (exportData) => {
 //   doc.end();
 // };
 
-export const getLinkAnalyticsOverview = async (userId, linkId, days) => {
+export const getLinkAnalyticsOverview = async (userId, linkId, days, skipCheck = false) => {
   try {
     const allowedDays = [7, 30, 90, 365];
 
@@ -979,7 +979,7 @@ export const getLinkAnalyticsOverview = async (userId, linkId, days) => {
       throw error;
     }
 
-    if (!link.isEnabledForReport) {
+    if (!skipCheck && !link.isEnabledForReport) {
       const error = new Error("This link doesn't support any analytics");
       error.statusCode = 403;
       throw error;
